@@ -1,13 +1,14 @@
 package ghoststring
 
 import (
+	"crypto/sha1"
 	"encoding/base64"
 	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/scrypt"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
@@ -18,8 +19,6 @@ const (
 
 	aesKeyLen = 32
 	aesRecN   = 32_768
-	aesRecr   = 8
-	aesRecp   = 1
 
 	nonceLength = 12
 )
@@ -71,10 +70,7 @@ func SetGhostifyer(namespace, key string, nonce []byte) error {
 		return errors.Wrap(Err, "invalid nonce length")
 	}
 
-	dk, err := scrypt.Key([]byte(key), nonce, aesRecN, aesRecr, aesRecp, aesKeyLen)
-	if err != nil {
-		return err
-	}
+	dk := pbkdf2.Key([]byte(key), nonce, aesRecN, aesKeyLen, sha1.New)
 
 	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk), nonce: nonce}
 

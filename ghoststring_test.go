@@ -37,7 +37,7 @@ func TestGhostString_JSONRoundTrip(t *testing.T) {
 		},
 		{
 			g: &ghoststring.GhostString{Namespace: "test", String: "maybe"},
-			s: "\"👻:dGVzdDo6VTJUrg2wETXLUYVVAktVU0yz65bZ\"",
+			s: "\"👻:dGVzdDo6N2KgwoGvJ0/dNzpBtEzRQxX1/DsS\"",
 		},
 	} {
 		t.Run(fmt.Sprintf("namespace=%[1]q,string=%[2]v", tc.g.Namespace, tc.g.String), func(t *testing.T) {
@@ -109,7 +109,7 @@ func ExampleGhostString() {
 	//   "entries": [
 	//     {
 	//       "timestamp": "1969-12-31T19:00:00.000004-05:00",
-	//       "text": "👻:ZXhhbXBsZTo6JmMZmos1SCVcWtB38h7JodobEVC+/x1XQ5B6cvAsh+7NHnLeh4tGtrfdToiiZVTbICPdxp81VYiMWYiGxMeLFVb+JaP8iVrlKTaUazfFxOHY0rbkBSX3u8uU0tPq9yeAMLg="
+	//       "text": "👻:ZXhhbXBsZTo6c+wSRuV0cACU48++XPBIVPyvnMGQLJA0Gak3osgO0EHHNTIU8HO67H7T3/XgGZsXm9XdCqYkip0H/7L8q20MUUmiod2ykXZiW0NSNkL7f7JwCV4GcqGbhmIGaEjzgCKtE2A="
 	//     }
 	//   ]
 	// }
