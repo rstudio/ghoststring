@@ -25,23 +25,20 @@ func TestGhostString_JSONRoundTrip(t *testing.T) {
 		err error
 	}{
 		{
+			g:   &ghoststring.GhostString{},
+			s:   "null",
+			err: ghoststring.Err,
+		},
+		{
 			g: &ghoststring.GhostString{Namespace: "test"},
 			s: "null",
 		},
 		{
-			g: &ghoststring.GhostString{Namespace: "test", String: "nope"},
-			s: "null",
-		},
-		{
-			g: &ghoststring.GhostString{Namespace: "test", Valid: true},
-			s: "\"👻:dGVzdDo6vCuEIr0ZyfY3+RMNIeuYew==\"",
-		},
-		{
-			g: &ghoststring.GhostString{Namespace: "test", String: "maybe", Valid: true},
+			g: &ghoststring.GhostString{Namespace: "test", String: "maybe"},
 			s: "\"👻:dGVzdDo6VTJUrg2wETXLUYVVAktVU0yz65bZ\"",
 		},
 	} {
-		t.Run(fmt.Sprintf("string=%[1]q,valid=%[2]v", tc.g.String, tc.g.Valid), func(t *testing.T) {
+		t.Run(fmt.Sprintf("namespace=%[1]q,string=%[2]v", tc.g.Namespace, tc.g.String), func(t *testing.T) {
 			r := require.New(t)
 
 			actualBytes, err := json.Marshal(tc.g)

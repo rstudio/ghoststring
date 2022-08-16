@@ -2,12 +2,10 @@ package ghoststring
 
 import (
 	"encoding/base64"
-	"encoding/hex"
 	"regexp"
 	"strings"
 	"sync"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/scrypt"
 )
@@ -81,53 +79,6 @@ func SetGhostifyer(namespace, key string, nonce []byte) error {
 	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk), nonce: nonce}
 
 	return nil
-}
-
-func SetGhostifyerFromEnv(namespace string) error {
-	ghostifyersLock.Lock()
-	defer ghostifyersLock.Unlock()
-
-	if err := validateNamespace(namespace); err != nil {
-		return err
-	}
-
-	cfg, err := newConfig(namespace)
-	if err != nil {
-		return err
-	}
-
-	decNonce, err := hex.DecodeString(cfg.Nonce)
-	if err != nil {
-		return err
-	}
-
-	if len(decNonce) != nonceLength {
-		return errors.Wrap(Err, "invalid nonce length")
-	}
-
-	dk, err := scrypt.Key([]byte(cfg.Key), decNonce, aesRecN, aesRecr, aesRecp, aesKeyLen)
-	if err != nil {
-		return err
-	}
-
-	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk), nonce: decNonce}
-
-	return nil
-}
-
-type config struct {
-	Key   string `envconfig:"KEY"`
-	Nonce string `envconfig:"NONCE"`
-}
-
-func newConfig(namespace string) (*config, error) {
-	cfg := &config{}
-
-	if err := envconfig.Process("ghoststring_"+namespace, cfg); err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
 }
 
 func validateNamespace(namespace string) error {

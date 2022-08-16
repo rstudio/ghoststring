@@ -18,19 +18,25 @@ var (
 )
 
 type GhostString struct {
-	Valid     bool
 	String    string
 	Namespace string
 }
 
+func (gs *GhostString) IsValid() bool {
+	return gs.String != "" && validateNamespace(gs.Namespace) == nil
+}
+
 func (gs *GhostString) Equal(other *GhostString) bool {
 	return other != nil &&
-		gs.Valid == other.Valid &&
 		gs.String == other.String &&
 		gs.Namespace == other.Namespace
 }
 
 func (gs *GhostString) MarshalJSON() ([]byte, error) {
+	if gs.Namespace == "" {
+		return nil, errors.Wrap(Err, "no namespace set")
+	}
+
 	ghostifyer, ok := ghostifyers[gs.Namespace]
 	if !ok {
 		return nil, errors.Wrapf(Err, "no ghostifyer set for namespace %[1]q", gs.Namespace)
@@ -55,7 +61,6 @@ func (gs *GhostString) UnmarshalJSON(b []byte) error {
 	}
 
 	if s == "" {
-		gs.Valid = false
 		gs.String = ""
 		gs.Namespace = ""
 
@@ -67,7 +72,6 @@ func (gs *GhostString) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	gs.Valid = un.Valid
 	gs.String = un.String
 	gs.Namespace = un.Namespace
 

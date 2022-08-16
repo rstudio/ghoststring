@@ -19,7 +19,7 @@ func (g *aes256GcmGhostifyer) Ghostify(gs *GhostString) (string, error) {
 		return "", errors.Wrap(Err, "invalid key")
 	}
 
-	if gs == nil || !gs.Valid {
+	if gs == nil || !gs.IsValid() {
 		return jsonNull, nil
 	}
 
@@ -59,7 +59,7 @@ func (g *aes256GcmGhostifyer) Unghostify(s string) (*GhostString, error) {
 		return nil, err
 	}
 
-	return &GhostString{Valid: true, Namespace: nsParts[0], String: string(plainBytes)}, nil
+	return &GhostString{Namespace: nsParts[0], String: string(plainBytes)}, nil
 }
 
 func aes256GcmEncrypt(key, nonce []byte, plainText string) ([]byte, error) {
