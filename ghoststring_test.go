@@ -3,7 +3,9 @@ package ghoststring_test
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/rstudio/ghoststring"
 	"github.com/stretchr/testify/require"
@@ -61,4 +63,55 @@ func TestGhostString_JSONRoundTrip(t *testing.T) {
 			r.Truef(tc.g.Equal(fromJson), "%+#[1]v != %+#[2]v", tc.g, fromJson)
 		})
 	}
+}
+
+func ExampleGhostString() {
+	if err := ghoststring.SetGhostifyer(
+		"example",
+		"correct horse battery staple",
+		[]byte("arghhhhhhhhh"),
+	); err != nil {
+		panic(err)
+	}
+
+	type DiaryEntry struct {
+		Timestamp time.Time               `json:"timestamp"`
+		Text      ghoststring.GhostString `json:"text"`
+	}
+
+	type Diary struct {
+		Author  string       `json:"author"`
+		Entries []DiaryEntry `json:"entries"`
+	}
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+
+	if err := enc.Encode(
+		&Diary{
+			Author: "Eagerly Anticipated",
+			Entries: []DiaryEntry{
+				{
+					Timestamp: time.UnixMicro(4),
+					Text: ghoststring.GhostString{
+						Namespace: "example",
+						String:    "Nights without you are so dark. I pray that someday you will return my flashlight.",
+					},
+				},
+			},
+		},
+	); err != nil {
+		panic(err)
+	}
+
+	// Output: {
+	//   "author": "Eagerly Anticipated",
+	//   "entries": [
+	//     {
+	//       "timestamp": "1969-12-31T19:00:00.000004-05:00",
+	//       "text": "👻:ZXhhbXBsZTo6JmMZmos1SCVcWtB38h7JodobEVC+/x1XQ5B6cvAsh+7NHnLeh4tGtrfdToiiZVTbICPdxp81VYiMWYiGxMeLFVb+JaP8iVrlKTaUazfFxOHY0rbkBSX3u8uU0tPq9yeAMLg="
+	//     }
+	//   ]
+	// }
+	//
 }
