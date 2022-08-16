@@ -3,7 +3,7 @@ package ghoststring_test
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,27 +17,25 @@ func TestGhostString_JSONRoundTrip(t *testing.T) {
 		ghoststring.SetGhostifyer(
 			"test",
 			"hang-glider-casserole-newt",
-			[]byte("4555679050a3"),
 		),
 	)
 
 	for _, tc := range []struct {
-		g   *ghoststring.GhostString
-		s   string
-		err error
+		g    *ghoststring.GhostString
+		null bool
+		err  error
 	}{
 		{
-			g:   &ghoststring.GhostString{},
-			s:   "null",
-			err: ghoststring.Err,
+			g:    &ghoststring.GhostString{},
+			null: true,
+			err:  ghoststring.Err,
 		},
 		{
-			g: &ghoststring.GhostString{Namespace: "test"},
-			s: "null",
+			g:    &ghoststring.GhostString{Namespace: "test"},
+			null: true,
 		},
 		{
 			g: &ghoststring.GhostString{Namespace: "test", String: "maybe"},
-			s: "\"👻:dGVzdDo6N2KgwoGvJ0/dNzpBtEzRQxX1/DsS\"",
 		},
 	} {
 		t.Run(fmt.Sprintf("namespace=%[1]q,string=%[2]v", tc.g.Namespace, tc.g.String), func(t *testing.T) {
@@ -49,9 +47,9 @@ func TestGhostString_JSONRoundTrip(t *testing.T) {
 				return
 			}
 
-			r.Equal(tc.s, string(actualBytes))
+			r.NotEqual("", string(actualBytes))
 
-			if string(actualBytes) == "null" {
+			if tc.null {
 				return
 			}
 
@@ -69,7 +67,6 @@ func ExampleGhostString() {
 	if err := ghoststring.SetGhostifyer(
 		"example",
 		"correct horse battery staple",
-		[]byte("arghhhhhhhhh"),
 	); err != nil {
 		panic(err)
 	}
@@ -84,10 +81,7 @@ func ExampleGhostString() {
 		Entries []DiaryEntry `json:"entries"`
 	}
 
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-
-	if err := enc.Encode(
+	enc, err := json.MarshalIndent(
 		&Diary{
 			Author: "Eagerly Anticipated",
 			Entries: []DiaryEntry{
@@ -100,18 +94,18 @@ func ExampleGhostString() {
 				},
 			},
 		},
-	); err != nil {
+		"",
+		"  ",
+	)
+	if err != nil {
 		panic(err)
 	}
 
-	// Output: {
-	//   "author": "Eagerly Anticipated",
-	//   "entries": [
-	//     {
-	//       "timestamp": "1969-12-31T19:00:00.000004-05:00",
-	//       "text": "👻:ZXhhbXBsZTo6c+wSRuV0cACU48++XPBIVPyvnMGQLJA0Gak3osgO0EHHNTIU8HO67H7T3/XgGZsXm9XdCqYkip0H/7L8q20MUUmiod2ykXZiW0NSNkL7f7JwCV4GcqGbhmIGaEjzgCKtE2A="
-	//     }
-	//   ]
-	// }
-	//
+	if !strings.Contains(string(enc), "👻:") {
+		panic("not ghostly enough")
+	}
+
+	fmt.Println("no peeking")
+
+	// Output: no peeking
 }

@@ -3,15 +3,16 @@ package ghoststring
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
 type aes256GcmGhostifyer struct {
-	key   []byte
-	nonce []byte
+	key []byte
 }
 
 func (g *aes256GcmGhostifyer) Ghostify(gs *GhostString) (string, error) {
@@ -23,13 +24,24 @@ func (g *aes256GcmGhostifyer) Ghostify(gs *GhostString) (string, error) {
 		return jsonNull, nil
 	}
 
-	encBytes, err := aes256GcmEncrypt(g.key, g.nonce, gs.String)
+	nonce := make([]byte, nonceLength)
+	if _, err := rand.Read(nonce); err != nil {
+		return "", err
+	}
+
+	encBytes, err := aes256GcmEncrypt(g.key, nonce, gs.String)
 	if err != nil {
 		return "", err
 	}
 
 	b64Value := base64.StdEncoding.EncodeToString(
-		append([]byte(gs.Namespace+namespaceSeparator), encBytes...),
+		append(
+			append(
+				[]byte(hex.EncodeToString(nonce)),
+				[]byte(gs.Namespace+namespaceSeparator)...,
+			),
+			encBytes...,
+		),
 	)
 
 	return prefix + b64Value, nil
@@ -44,7 +56,14 @@ func (g *aes256GcmGhostifyer) Unghostify(s string) (*GhostString, error) {
 		return &GhostString{}, nil
 	}
 
-	nsValueBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, prefix))
+	nonceNsValueBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, prefix))
+	if err != nil {
+		return nil, err
+	}
+
+	hexNonce, nsValueBytes := nonceNsValueBytes[:nonceLengthHex], nonceNsValueBytes[nonceLengthHex:]
+
+	nonce, err := hex.DecodeString(string(hexNonce))
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +73,7 @@ func (g *aes256GcmGhostifyer) Unghostify(s string) (*GhostString, error) {
 		return nil, errors.Wrap(Err, "invalid namespacing")
 	}
 
-	plainBytes, err := aes256GcmDecrypt(g.key, g.nonce, nsParts[1])
+	plainBytes, err := aes256GcmDecrypt(g.key, nonce, nsParts[1])
 	if err != nil {
 		return nil, err
 	}

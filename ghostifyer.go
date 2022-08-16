@@ -20,7 +20,8 @@ const (
 	aesKeyLen = 32
 	aesRecN   = 32_768
 
-	nonceLength = 12
+	nonceLength    = 12
+	nonceLengthHex = 24
 )
 
 var (
@@ -30,20 +31,26 @@ var (
 	namespaceMatch = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9]*$")
 )
 
+func salt() []byte {
+	return []byte("cringe eh")
+}
+
 // Ghostifyer encrypts and encodes a *GhostString into a string representation that is
 // acceptable for inclusion in JSON. The structure of a ghostified string is:
 //
-//	  {prefix}base64({namespace}{namespace separator}{value})
+//	  {prefix}base64({nonce}{namespace}{namespace separator}{value})
 type Ghostifyer interface {
 	Ghostify(*GhostString) (string, error)
 	Unghostify(string) (*GhostString, error)
 }
 
 func metaUnghostify(s string) (*GhostString, error) {
-	nsValueBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, prefix))
+	nonceNsValueBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, prefix))
 	if err != nil {
 		return nil, err
 	}
+
+	nsValueBytes := nonceNsValueBytes[nonceLengthHex:]
 
 	nsParts := strings.SplitN(string(nsValueBytes), namespaceSeparator, namespacePartsLength)
 	if len(nsParts) != namespacePartsLength {
@@ -58,7 +65,7 @@ func metaUnghostify(s string) (*GhostString, error) {
 	return ghostifyer.Unghostify(s)
 }
 
-func SetGhostifyer(namespace, key string, nonce []byte) error {
+func SetGhostifyer(namespace, key string) error {
 	ghostifyersLock.Lock()
 	defer ghostifyersLock.Unlock()
 
@@ -66,13 +73,9 @@ func SetGhostifyer(namespace, key string, nonce []byte) error {
 		return err
 	}
 
-	if len(nonce) != nonceLength {
-		return errors.Wrap(Err, "invalid nonce length")
-	}
+	dk := pbkdf2.Key([]byte(key), salt(), aesRecN, aesKeyLen, sha1.New)
 
-	dk := pbkdf2.Key([]byte(key), nonce, aesRecN, aesKeyLen, sha1.New)
-
-	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk), nonce: nonce}
+	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk)}
 
 	return nil
 }
