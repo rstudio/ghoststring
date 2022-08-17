@@ -20,9 +20,7 @@ const (
 var (
 	internalNullGhostifyer Ghostifyer = &nullGhostifyer{}
 
-	ghostifyers = map[string]Ghostifyer{
-		internalNamespace: internalNullGhostifyer,
-	}
+	ghostifyers = map[string]Ghostifyer{}
 
 	ghostifyersLock = &sync.RWMutex{}
 )

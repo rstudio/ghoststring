@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	internalNamespace  = "<internal>"
 	namespaceSeparator = "::"
 	prefix             = "👻:"
 
@@ -121,10 +120,6 @@ func metaUnghostify(s string) (*GhostString, error) {
 }
 
 func validateNamespace(namespace string) error {
-	if namespace == internalNamespace {
-		return nil
-	}
-
 	if namespace != strings.TrimSpace(namespace) {
 		return errors.Wrapf(Err, "invalid namespace with blankspace %[1]q", namespace)
 	}
