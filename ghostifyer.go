@@ -2,13 +2,10 @@ package ghoststring
 
 import (
 	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"regexp"
-	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -27,7 +24,7 @@ const (
 
 var (
 	ghostifyers     = map[string]Ghostifyer{}
-	ghostifyersLock = &sync.Mutex{}
+	ghostifyersLock = &sync.RWMutex{}
 
 	namespaceMatch = regexp.MustCompile("^[a-zA-Z][-\\._a-zA-Z0-9]*[a-zA-Z0-9]$")
 )
@@ -41,31 +38,7 @@ type Ghostifyer interface {
 	Unghostify(string) (*GhostString, error)
 }
 
-func metaUnghostify(s string) (*GhostString, error) {
-	nonceNsValueBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, prefix))
-	if err != nil {
-		return nil, err
-	}
-
-	nsValueBytes := nonceNsValueBytes[nonceLengthHex:]
-
-	nsParts := strings.SplitN(string(nsValueBytes), namespaceSeparator, namespacePartsLength)
-	if len(nsParts) != namespacePartsLength {
-		return nil, errors.Wrap(Err, "invalid namespacing")
-	}
-
-	ghostifyer, ok := ghostifyers[nsParts[0]]
-	if !ok {
-		return nil, errors.Wrapf(Err, "no ghostifyer set for namespace %[1]q", nsParts[0])
-	}
-
-	return ghostifyer.Unghostify(s)
-}
-
 func SetGhostifyer(namespace, key string) (Ghostifyer, error) {
-	ghostifyersLock.Lock()
-	defer ghostifyersLock.Unlock()
-
 	if err := validateNamespace(namespace); err != nil {
 		return nil, err
 	}
@@ -83,23 +56,11 @@ func SetGhostifyer(namespace, key string) (Ghostifyer, error) {
 		sha1.New,
 	)
 
-	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk)}
+	gh := &aes256GcmGhostifyer{key: []byte(dk)}
 
-	return ghostifyers[namespace], nil
-}
+	ghostifyersLock.Lock()
+	ghostifyers[namespace] = gh
+	ghostifyersLock.Unlock()
 
-func validateNamespace(namespace string) error {
-	if namespace != strings.TrimSpace(namespace) {
-		return errors.Wrapf(Err, "invalid namespace with blankspace %[1]q", namespace)
-	}
-
-	if len(namespace) > maxNamespaceLength {
-		return errors.Wrapf(Err, "invalid namespace is too long %[1]q", namespace)
-	}
-
-	if !namespaceMatch.MatchString(namespace) {
-		return errors.Wrapf(Err, "invalid namespace %[1]q", namespace)
-	}
-
-	return nil
+	return gh, nil
 }

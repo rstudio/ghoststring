@@ -1,7 +1,9 @@
 package ghoststring
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -37,7 +39,10 @@ func (gs *GhostString) MarshalJSON() ([]byte, error) {
 		return nil, errors.Wrap(Err, "no namespace set")
 	}
 
+	ghostifyersLock.RLock()
 	ghostifyer, ok := ghostifyers[gs.Namespace]
+	ghostifyersLock.RUnlock()
+
 	if !ok {
 		return nil, errors.Wrapf(Err, "no ghostifyer set for namespace %[1]q", gs.Namespace)
 	}
@@ -74,6 +79,46 @@ func (gs *GhostString) UnmarshalJSON(b []byte) error {
 
 	gs.String = un.String
 	gs.Namespace = un.Namespace
+
+	return nil
+}
+
+func metaUnghostify(s string) (*GhostString, error) {
+	nonceNsValueBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, prefix))
+	if err != nil {
+		return nil, err
+	}
+
+	nsValueBytes := nonceNsValueBytes[nonceLengthHex:]
+
+	nsParts := strings.SplitN(string(nsValueBytes), namespaceSeparator, namespacePartsLength)
+	if len(nsParts) != namespacePartsLength {
+		return nil, errors.Wrap(Err, "invalid namespacing")
+	}
+
+	ghostifyersLock.RLock()
+	ghostifyer, ok := ghostifyers[nsParts[0]]
+	ghostifyersLock.RUnlock()
+
+	if !ok {
+		return nil, errors.Wrapf(Err, "no ghostifyer set for namespace %[1]q", nsParts[0])
+	}
+
+	return ghostifyer.Unghostify(s)
+}
+
+func validateNamespace(namespace string) error {
+	if namespace != strings.TrimSpace(namespace) {
+		return errors.Wrapf(Err, "invalid namespace with blankspace %[1]q", namespace)
+	}
+
+	if len(namespace) > maxNamespaceLength {
+		return errors.Wrapf(Err, "invalid namespace is too long %[1]q", namespace)
+	}
+
+	if !namespaceMatch.MatchString(namespace) {
+		return errors.Wrapf(Err, "invalid namespace %[1]q", namespace)
+	}
 
 	return nil
 }
