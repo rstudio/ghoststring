@@ -29,7 +29,7 @@ var (
 	ghostifyers     = map[string]Ghostifyer{}
 	ghostifyersLock = &sync.Mutex{}
 
-	namespaceMatch = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9]*$")
+	namespaceMatch = regexp.MustCompile("^[a-zA-Z][-\\._a-zA-Z0-9]*[a-zA-Z0-9]$")
 )
 
 // Ghostifyer encrypts and encodes a *GhostString into a string representation that is
