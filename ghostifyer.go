@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"sync"
 
-	"golang.org/x/crypto/pbkdf2"
+	"golang.org/x/crypto/argon2"
 )
 
 const (
@@ -15,7 +15,9 @@ const (
 	saltPrefix         = "github.com/rstudio/ghoststring:"
 
 	aesKeyLen            = 32
-	aesRecN              = 32_768
+	argon2Time           = 1
+	argon2Mem            = 64 * 1024
+	argon2Threads        = 4
 	maxNamespaceLength   = 32
 	namespacePartsLength = 2
 	nonceLength          = 12
@@ -48,12 +50,13 @@ func SetGhostifyer(namespace, key string) (Ghostifyer, error) {
 		sha1.Sum(append([]byte(saltPrefix), []byte(namespace)...)),
 	)
 
-	dk := pbkdf2.Key(
+	dk := argon2.IDKey(
 		[]byte(key),
 		[]byte(salt),
-		aesRecN,
+		argon2Time,
+		argon2Mem,
+		argon2Threads,
 		aesKeyLen,
-		sha1.New,
 	)
 
 	gh := &aes256GcmGhostifyer{key: []byte(dk)}
