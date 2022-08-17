@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -42,7 +41,7 @@ func getEphemeralAddr(t *testing.T) string {
 	return l.Addr().String()
 }
 
-func startIntegrationServer(ctx context.Context, t *testing.T, name string, env []string) *exec.Cmd {
+func startIntegrationServer(ctx context.Context, t *testing.T, l *log.Logger, name string, env []string) *exec.Cmd {
 	buf := &bytes.Buffer{}
 
 	proc := exec.CommandContext(ctx, filepath.Join(top, "build", runtime.GOOS, runtime.GOARCH, name))
@@ -53,7 +52,7 @@ func startIntegrationServer(ctx context.Context, t *testing.T, name string, env 
 	err := proc.Start()
 
 	if !assert.Nil(t, err) {
-		_, _ = io.Copy(os.Stderr, buf)
+		l.Println("buffer:\n", buf.String())
 		panic(err.Error())
 	}
 
@@ -181,10 +180,10 @@ func TestIntegrationViaClientSession(t *testing.T) {
 	_, mythPort, err := net.SplitHostPort(mythAddr)
 	r.Nil(err)
 
-	rectProc := startIntegrationServer(ctx, t, "rectangles", sharedEnv)
+	rectProc := startIntegrationServer(ctx, t, l, "rectangles", sharedEnv)
 	r.Nil(waitForHealthy(ctx, l, rectPort))
 
-	mythProc := startIntegrationServer(ctx, t, "myths", sharedEnv)
+	mythProc := startIntegrationServer(ctx, t, l, "myths", sharedEnv)
 	r.Nil(waitForHealthy(ctx, l, mythPort))
 
 	rectURLString := "http://127.0.0.1:" + rectPort
