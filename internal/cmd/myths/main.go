@@ -98,6 +98,8 @@ func main() {
 	})
 
 	go func() {
+		defer stop()
+
 		log.Printf("listening at %[1]q", addr)
 
 		if err := http.ListenAndServe(addr, appFunc); err != nil {

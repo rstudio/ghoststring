@@ -55,12 +55,11 @@ func (gs *GhostString) Equal(other *GhostString) bool {
 func (gs *GhostString) MarshalJSON() ([]byte, error) {
 	ghostifyersLock.RLock()
 	ghostifyer, ok := ghostifyers[gs.Namespace]
+	ghostifyersLock.RUnlock()
 
 	if !ok {
 		ghostifyer = internalNullGhostifyer
 	}
-
-	ghostifyersLock.RUnlock()
 
 	s, err := ghostifyer.Ghostify(gs)
 	if err != nil {

@@ -33,7 +33,7 @@ _build-internal-bin binname='ghoststring' _goos=goos _goarch=goarch:
     go build \
       -o build/{{ _goos }}/{{ _goarch }}/{{ binname }} \
       {{ go_build_flags }} \
-      ./internal/integration/cmd/{{ binname }}/
+      ./internal/cmd/{{ binname }}/
 
 test: build
   go test -race -v -coverprofile coverage.out ./...
