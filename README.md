@@ -70,6 +70,38 @@ encode to a JSON string type:
 }
 ```
 
+In the event of an unrecognized namespace, the `GhostString` fields will be encoded as
+empty strings, e.g.:
+
+```go
+msg := &Message{
+	Recipient: "frith@heck.example.org",
+	Content: ghoststring.GhostString{
+		Namespace: "heck.example.org",
+		String:    "Next time I'm bringing the coffee.",
+	},
+	Mood: ghoststring.GhostString{
+		Namespace: "wat.example.org",
+		String:    "zzz",
+	},
+}
+```
+
+Because the `"wat.example.org"` namespace isn't registered, the output will look like
+this:
+
+```javascript
+{
+  "recipient": "frith@heck.example.org",
+  "content": "👻:NTNjZjdmMWZjNzU2NTY1ODFkN2E4ZDI4aGVjay5leGFtcGxlLm9yZzo60XHqdSEbswpPbKLrDUuBZCrtUQLjmJ1NxHsqHMgBJjrB10O7JC4rwiMZw+wf/BOJGmu9ZCpMjgMpu18/VgDBpLn4n1nBNw==",
+  "mood": ""
+}
+```
+
 Any system that needs to read the encrypted contents must decode the JSON into a type that
 uses `GhostString` for the matching fields in a process where a matching `Ghostifyer` has
 been registered. Other systems may treat the values as opaque strings.
+
+<!--
+vim:tw=90
+-->

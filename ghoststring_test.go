@@ -3,6 +3,7 @@ package ghoststring_test
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -90,6 +91,13 @@ func ExampleGhostString() {
 						String:    "Nights without you are so dark. I pray that someday you will return my flashlight.",
 					},
 				},
+				{
+					Timestamp: time.UnixMicro(-8001),
+					Text: ghoststring.GhostString{
+						Namespace: "unknown",
+						String:    "We may never know.",
+					},
+				},
 			},
 		},
 		"",
@@ -99,8 +107,18 @@ func ExampleGhostString() {
 		panic(err)
 	}
 
-	if !strings.Contains(string(enc), "👻:") {
-		panic("not ghostly enough")
+	encString := string(enc)
+
+	if strings.Contains(encString, "We may never know.") || strings.Contains(encString, "Nights without you") {
+		panic("not ghostly enough: contains cleartext")
+	}
+
+	if !strings.Contains(encString, `"text": ""`) {
+		panic("not ghostly enough: lacking empty ghoststring")
+	}
+
+	if matched, err := regexp.MatchString(`.+"text": "👻:[^"]+"`, encString); !matched || err != nil {
+		panic("not ghostly enough: lacking non-empty ghoststring")
 	}
 
 	fmt.Println("no peeking")

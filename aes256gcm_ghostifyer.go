@@ -21,7 +21,7 @@ func (g *aes256GcmGhostifyer) Ghostify(gs *GhostString) (string, error) {
 	}
 
 	if gs == nil || !gs.IsValid() {
-		return jsonNull, nil
+		return "", nil
 	}
 
 	nonce := make([]byte, nonceLength)
@@ -52,7 +52,7 @@ func (g *aes256GcmGhostifyer) Unghostify(s string) (*GhostString, error) {
 		return nil, errors.Wrap(Err, "invalid key")
 	}
 
-	if s == jsonNull || s == "" {
+	if s == prefix || s == "" {
 		return &GhostString{}, nil
 	}
 

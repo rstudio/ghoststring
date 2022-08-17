@@ -3,32 +3,28 @@ package ghoststring
 import (
 	"crypto/sha1"
 	"fmt"
-	"regexp"
 	"sync"
 
 	"golang.org/x/crypto/argon2"
 )
 
 const (
-	namespaceSeparator = "::"
-	prefix             = "👻:"
-	saltPrefix         = "github.com/rstudio/ghoststring:"
+	saltPrefix = "github.com/rstudio/ghoststring:"
 
-	aesKeyLen            = 32
-	argon2Time           = 1
-	argon2Mem            = 64 * 1024
-	argon2Threads        = 4
-	maxNamespaceLength   = 32
-	namespacePartsLength = 2
-	nonceLength          = 12
-	nonceLengthHex       = 24
+	aesKeyLen     = 32
+	argon2Mem     = 64 * 1024
+	argon2Threads = 4
+	argon2Time    = 1
 )
 
 var (
-	ghostifyers     = map[string]Ghostifyer{}
-	ghostifyersLock = &sync.RWMutex{}
+	internalNullGhostifyer Ghostifyer = &nullGhostifyer{}
 
-	namespaceMatch = regexp.MustCompile("^[a-zA-Z][-\\._a-zA-Z0-9]*[a-zA-Z0-9]$")
+	ghostifyers = map[string]Ghostifyer{
+		internalNamespace: internalNullGhostifyer,
+	}
+
+	ghostifyersLock = &sync.RWMutex{}
 )
 
 // Ghostifyer encrypts and encodes a *GhostString into a string representation that is
