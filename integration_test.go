@@ -42,7 +42,7 @@ func getEphemeralAddr(t *testing.T) string {
 	return l.Addr().String()
 }
 
-func startIntegrationServer(ctx context.Context, t *testing.T, name string, env []string) (*exec.Cmd, *bytes.Buffer) {
+func startIntegrationServer(ctx context.Context, t *testing.T, name string, env []string) *exec.Cmd {
 	buf := &bytes.Buffer{}
 
 	proc := exec.CommandContext(ctx, filepath.Join(top, "build", runtime.GOOS, runtime.GOARCH, name))
@@ -57,7 +57,7 @@ func startIntegrationServer(ctx context.Context, t *testing.T, name string, env 
 		panic(err.Error())
 	}
 
-	return proc, buf
+	return proc
 }
 
 func killWaitProc(l *log.Logger, port string, proc *exec.Cmd) {
@@ -65,6 +65,8 @@ func killWaitProc(l *log.Logger, port string, proc *exec.Cmd) {
 		l.Println("no process to kill")
 		return
 	}
+
+	l.Println("port=", port, " buffer:\n", proc.Stdout.(*bytes.Buffer).String())
 
 	req, err := http.NewRequest(http.MethodDelete, "http://127.0.0.1:"+port, nil)
 	if err != nil {
@@ -179,10 +181,10 @@ func TestIntegrationViaClientSession(t *testing.T) {
 	_, mythPort, err := net.SplitHostPort(mythAddr)
 	r.Nil(err)
 
-	rectProc, rectBuf := startIntegrationServer(ctx, t, "rectangles", sharedEnv)
+	rectProc := startIntegrationServer(ctx, t, "rectangles", sharedEnv)
 	r.Nil(waitForHealthy(ctx, l, rectPort))
 
-	mythProc, mythBuf := startIntegrationServer(ctx, t, "myths", sharedEnv)
+	mythProc := startIntegrationServer(ctx, t, "myths", sharedEnv)
 	r.Nil(waitForHealthy(ctx, l, mythPort))
 
 	rectURLString := "http://127.0.0.1:" + rectPort
@@ -233,7 +235,4 @@ func TestIntegrationViaClientSession(t *testing.T) {
 
 	killWaitProc(l, rectPort, rectProc)
 	killWaitProc(l, mythPort, mythProc)
-
-	l.Println("rectangles buffer:\n", rectBuf.String())
-	l.Println("myths buffer:\n", mythBuf.String())
 }

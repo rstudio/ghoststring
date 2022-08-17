@@ -18,3 +18,5 @@ jobs:
       - run: just distclean
       - run: just
       - run: git diff --exit-code
+      - run: just integration-test
+      - run: git diff --exit-code

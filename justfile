@@ -38,6 +38,9 @@ _build-internal-bin binname='ghoststring' _goos=goos _goarch=goarch:
 test: build
   go test -race -v -coverprofile coverage.out ./...
 
+integration-test: build
+  GHOSTSTRING_INTEGRATION_TESTING=on go test -v -coverprofile coverage.out ./...
+
 show-cover:
   go tool cover -func coverage.out
 
