@@ -3,6 +3,7 @@ package ghoststring
 import (
 	"crypto/sha1"
 	"encoding/base64"
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -12,16 +13,16 @@ import (
 )
 
 const (
-	prefix               = "👻:"
-	namespaceSeparator   = "::"
-	namespacePartsLength = 2
+	namespaceSeparator = "::"
+	prefix             = "👻:"
+	saltPrefix         = "github.com/rstudio/ghoststring:"
+
+	aesKeyLen            = 32
+	aesRecN              = 32_768
 	maxNamespaceLength   = 32
-
-	aesKeyLen = 32
-	aesRecN   = 32_768
-
-	nonceLength    = 12
-	nonceLengthHex = 24
+	namespacePartsLength = 2
+	nonceLength          = 12
+	nonceLengthHex       = 24
 )
 
 var (
@@ -30,10 +31,6 @@ var (
 
 	namespaceMatch = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9]*$")
 )
-
-func salt() []byte {
-	return []byte("cringe eh")
-}
 
 // Ghostifyer encrypts and encodes a *GhostString into a string representation that is
 // acceptable for inclusion in JSON. The structure of a ghostified string is:
@@ -65,19 +62,30 @@ func metaUnghostify(s string) (*GhostString, error) {
 	return ghostifyer.Unghostify(s)
 }
 
-func SetGhostifyer(namespace, key string) error {
+func SetGhostifyer(namespace, key string) (Ghostifyer, error) {
 	ghostifyersLock.Lock()
 	defer ghostifyersLock.Unlock()
 
 	if err := validateNamespace(namespace); err != nil {
-		return err
+		return nil, err
 	}
 
-	dk := pbkdf2.Key([]byte(key), salt(), aesRecN, aesKeyLen, sha1.New)
+	salt := fmt.Sprintf(
+		"%x",
+		sha1.Sum(append([]byte(saltPrefix), []byte(namespace)...)),
+	)
+
+	dk := pbkdf2.Key(
+		[]byte(key),
+		[]byte(salt),
+		aesRecN,
+		aesKeyLen,
+		sha1.New,
+	)
 
 	ghostifyers[namespace] = &aes256GcmGhostifyer{key: []byte(dk)}
 
-	return nil
+	return ghostifyers[namespace], nil
 }
 
 func validateNamespace(namespace string) error {

@@ -12,13 +12,11 @@ import (
 )
 
 func TestGhostString_JSONRoundTrip(t *testing.T) {
-	require.Nil(
-		t,
-		ghoststring.SetGhostifyer(
-			"test",
-			"hang-glider-casserole-newt",
-		),
+	_, err := ghoststring.SetGhostifyer(
+		"test",
+		"hang-glider-casserole-newt",
 	)
+	require.Nil(t, err)
 
 	for _, tc := range []struct {
 		g    *ghoststring.GhostString
@@ -64,7 +62,7 @@ func TestGhostString_JSONRoundTrip(t *testing.T) {
 }
 
 func ExampleGhostString() {
-	if err := ghoststring.SetGhostifyer(
+	if _, err := ghoststring.SetGhostifyer(
 		"example",
 		"correct horse battery staple",
 	); err != nil {
