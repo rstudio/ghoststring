@@ -101,7 +101,3 @@ this:
 Any system that needs to read the encrypted contents must decode the JSON into a type that
 uses `GhostString` for the matching fields in a process where a matching `Ghostifyer` has
 been registered. Other systems may treat the values as opaque strings.
-
-<!--
-vim:tw=90
--->
