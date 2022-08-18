@@ -3,48 +3,61 @@ package ghoststring
 import (
 	"encoding/base64"
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	jsonNull = "null"
+	namespaceSeparator = "::"
+	prefix             = "👻:"
+
+	maxNamespaceLength   = 32
+	namespacePartsLength = 2
+	nonceLength          = 12
+	nonceLengthHex       = 24
 )
 
 var (
 	Err = errors.New("ghoststring error")
 
+	namespaceMatch = regexp.MustCompile("^[a-zA-Z][-\\._a-zA-Z0-9]*[a-zA-Z0-9]$")
+
 	_ json.Marshaler   = &GhostString{}
 	_ json.Unmarshaler = &GhostString{}
 )
 
+// GhostString wraps a string with a JSON marshaller that uses a
+// namespace-scoped encrypting Ghostifyer registered via
+// SetGhostifyer
 type GhostString struct {
 	String    string
 	Namespace string
 }
 
+// IsValid checks that the wrapped string value is non-empty and
+// the namespace is valid
 func (gs *GhostString) IsValid() bool {
 	return gs.String != "" && validateNamespace(gs.Namespace) == nil
 }
 
+// Equal compares this GhostString to another
 func (gs *GhostString) Equal(other *GhostString) bool {
 	return other != nil &&
 		gs.String == other.String &&
 		gs.Namespace == other.Namespace
 }
 
+// MarshalJSON allows GhostString to fulfill the json.Marshaler
+// interface. The lack of a namespace is considered an error.
 func (gs *GhostString) MarshalJSON() ([]byte, error) {
-	if gs.Namespace == "" {
-		return nil, errors.Wrap(Err, "no namespace set")
-	}
-
 	ghostifyersLock.RLock()
 	ghostifyer, ok := ghostifyers[gs.Namespace]
 	ghostifyersLock.RUnlock()
 
 	if !ok {
-		return nil, errors.Wrapf(Err, "no ghostifyer set for namespace %[1]q", gs.Namespace)
+		ghostifyer = internalNullGhostifyer
 	}
 
 	s, err := ghostifyer.Ghostify(gs)
@@ -52,13 +65,12 @@ func (gs *GhostString) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	if s == jsonNull {
-		return []byte(s), nil
-	}
-
 	return json.Marshal(s)
 }
 
+// UnmarshalJSON allows GhostString to fulfill the json.Unmarshaler
+// interface. The bytes are first unmarshaled as a string and then
+// if non-empty are passed through an "unghostify" step.
 func (gs *GhostString) UnmarshalJSON(b []byte) error {
 	s := ""
 	if err := json.Unmarshal(b, &s); err != nil {

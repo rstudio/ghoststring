@@ -1,4 +1,4 @@
 *.out
 /.envrc
 /.local/
-/ghoststring
+/build/
