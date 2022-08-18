@@ -2,8 +2,17 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/rstudio/ghoststring.svg)](https://pkg.go.dev/github.com/rstudio/ghoststring)
 
-A Go string wrapper type that is encrypted when JSONified. Encryption is symmetric using
-AES-256-GMC with per-string nonce.
+A Go string wrapper type that is encrypted when stringified or JSONified. The following
+standard library interfaces are fulfilled:
+
+- `json.Marshaler`
+- `json.Unmarshaler`
+- `fmt.Stringer`
+- `fmt.GoStringer`
+- `encoding.TextMarshaler`
+- `encoding.TextUnmarshaler`
+- `encoding.BinaryMarshaler`
+- `encoding.BinaryUnmarshaler`
 
 ## usage
 
@@ -34,11 +43,19 @@ if err != nil {
 }
 ```
 
-Register and set a `Ghostifyer` with the secret key and namespace in use:
+Create a `Ghostifyer` with the secret key and namespace in use:
 
 ```go
-_, err := ghoststring.SetGhostifyer("heck.example.org", string(secretKeyBytes))
+gh, err := ghoststring.NewAES256GCMSingleKeyGhostifyer("heck.example.org", string(secretKeyBytes))
 if err != nil {
+	return err
+}
+```
+
+Register the `Ghostifyer`:
+
+```go
+if err := ghoststring.SetGhostifyer(gh); err != nil {
 	return err
 }
 ```
@@ -50,11 +67,11 @@ msg := &Message{
 	Recipient: "morningstar@heck.example.org",
 	Content: ghoststring.GhostString{
 		Namespace: "heck.example.org",
-		String:    "We meet me at the fjord at dawn. Bring donuts, please.",
+		Str:       "We meet me at the fjord at dawn. Bring donuts, please.",
 	},
 	Mood: ghoststring.GhostString{
 		Namespace: "heck.example.org",
-		String:    "giddy",
+		Str:       "giddy",
 	},
 }
 ```
@@ -78,11 +95,11 @@ msg := &Message{
 	Recipient: "frith@heck.example.org",
 	Content: ghoststring.GhostString{
 		Namespace: "heck.example.org",
-		String:    "Next time I'm bringing the coffee.",
+		Str:       "Next time I'm bringing the coffee.",
 	},
 	Mood: ghoststring.GhostString{
 		Namespace: "wat.example.org",
-		String:    "zzz",
+		Str:       "zzz",
 	},
 }
 ```
