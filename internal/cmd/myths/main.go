@@ -36,7 +36,12 @@ func main() {
 	secretKey := os.Getenv("GHOSTSTRING_INTEGRATION_TEST_SECRET_KEY")
 	addr := os.Getenv("GHOSTSTRING_INTEGRATION_TEST_MYTHS_ADDR")
 
-	if _, err := ghoststring.SetGhostifyer("hightops", secretKey); err != nil {
+	gh, err := ghoststring.NewAES256GCMSingleKeyGhostifyer("hightops", secretKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := ghoststring.SetGhostifyer(gh); err != nil {
 		log.Fatal(err)
 	}
 
@@ -79,7 +84,7 @@ func main() {
 		for _, m := range reqBody.Collection {
 			for _, s := range m.Shapes {
 				for _, c := range s.Complaints {
-					score += m.Rating * int64(len(c.String))
+					score += m.Rating * int64(len(c.Str))
 				}
 			}
 		}

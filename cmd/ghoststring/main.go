@@ -17,7 +17,7 @@ func main() {
 
 	flag.Parse()
 
-	ghostifyer, err := ghoststring.SetGhostifyer(*namespaceFlag, *keyFlag)
+	ghostifyer, err := ghoststring.NewAES256GCMSingleKeyGhostifyer(*namespaceFlag, *keyFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,14 +33,14 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Fprint(os.Stdout, gs.String)
+		fmt.Fprint(os.Stdout, gs.Str)
 		return
 	}
 
 	encString, err := ghostifyer.Ghostify(
 		&ghoststring.GhostString{
 			Namespace: *namespaceFlag,
-			String:    string(inStringBytes),
+			Str:       string(inStringBytes),
 		},
 	)
 

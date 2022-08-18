@@ -25,7 +25,12 @@ func main() {
 	secretKey := os.Getenv("GHOSTSTRING_INTEGRATION_TEST_SECRET_KEY")
 	addr := os.Getenv("GHOSTSTRING_INTEGRATION_TEST_RECTANGLES_ADDR")
 
-	if _, err := ghoststring.SetGhostifyer("hightops", secretKey); err != nil {
+	gh, err := ghoststring.NewAES256GCMSingleKeyGhostifyer("hightops", secretKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := ghoststring.SetGhostifyer(gh); err != nil {
 		log.Fatal(err)
 	}
 
@@ -36,11 +41,11 @@ func main() {
 			Complaints: []ghoststring.GhostString{
 				{
 					Namespace: "hightops",
-					String:    "predictable",
+					Str:       "predictable",
 				},
 				{
 					Namespace: "hightops",
-					String:    "inflexible",
+					Str:       "inflexible",
 				},
 			},
 		},
@@ -50,7 +55,7 @@ func main() {
 			Complaints: []ghoststring.GhostString{
 				{
 					Namespace: "hightops",
-					String:    "arrogant",
+					Str:       "arrogant",
 				},
 			},
 		},
@@ -59,7 +64,7 @@ func main() {
 			Ratio: 0.5,
 			Complaints: []ghoststring.GhostString{
 				{
-					String: "overly mysterious",
+					Str: "overly mysterious",
 				},
 			},
 		},
