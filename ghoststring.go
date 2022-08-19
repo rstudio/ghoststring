@@ -19,7 +19,6 @@ const (
 	Nonce = 12
 
 	namespacePartsLength = 2
-	nonceBytes           = 24 / 2
 )
 
 var (

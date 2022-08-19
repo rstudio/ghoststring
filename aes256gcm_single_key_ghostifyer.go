@@ -64,7 +64,7 @@ func (g *aes256GcmSingleKeyGhostifyer) Ghostify(gs *GhostString) (string, error)
 		return "", nil
 	}
 
-	nonce := make([]byte, nonceBytes)
+	nonce := make([]byte, Nonce)
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
