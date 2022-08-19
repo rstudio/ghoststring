@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -65,7 +64,7 @@ func (g *aes256GcmSingleKeyGhostifyer) Ghostify(gs *GhostString) (string, error)
 		return "", nil
 	}
 
-	nonce := make([]byte, nonceBytes)
+	nonce := make([]byte, Nonce)
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
@@ -78,7 +77,7 @@ func (g *aes256GcmSingleKeyGhostifyer) Ghostify(gs *GhostString) (string, error)
 	b64Value := base64.StdEncoding.EncodeToString(
 		append(
 			append(
-				[]byte(hex.EncodeToString(nonce)),
+				nonce,
 				[]byte(gs.Namespace+NamespaceSeparator)...,
 			),
 			encBytes...,

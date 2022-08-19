@@ -3,7 +3,6 @@ package ghoststring
 import (
 	"encoding"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -17,10 +16,9 @@ const (
 	NamespaceSeparator   = "::"
 	Prefix               = "👻:"
 
-	NonceHex = 24
+	Nonce = 12
 
 	namespacePartsLength = 2
-	nonceBytes           = 24 / 2
 )
 
 var (
@@ -117,7 +115,7 @@ func (gs *GhostString) MarshalJSON() ([]byte, error) {
 //
 //	  "{Prefix}base64({nonce}{namespace}{NamespaceSeparator}{opaque-value})"
 //
-// where {nonce} has the length specified as NonceHex.
+// where {nonce} has the length specified as Nonce.
 func (gs *GhostString) UnmarshalJSON(b []byte) error {
 	s := ""
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -188,16 +186,11 @@ func toUnghostifyParts(s string) (*unghostifyParts, error) {
 		return nil, err
 	}
 
-	nonceBytesHex, nsValueBytes := nonceNsValueBytes[:NonceHex], nonceNsValueBytes[NonceHex:]
+	nonce, nsValueBytes := nonceNsValueBytes[:Nonce], nonceNsValueBytes[Nonce:]
 
 	nsParts := strings.SplitN(string(nsValueBytes), NamespaceSeparator, namespacePartsLength)
 	if len(nsParts) != namespacePartsLength {
 		return nil, errors.Wrap(Err, "invalid namespacing")
-	}
-
-	nonce, err := hex.DecodeString(string(nonceBytesHex))
-	if err != nil {
-		return nil, err
 	}
 
 	return &unghostifyParts{
