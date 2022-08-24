@@ -18,11 +18,15 @@ const (
 
 	Nonce = 12
 
+	envKeySafeNamespaceRegExp = "[^A-Z0-9_]"
+
 	namespacePartsLength = 2
 )
 
 var (
 	Err = errors.New("ghoststring error")
+
+	envKeySafeNamespaceMatch = regexp.MustCompile(envKeySafeNamespaceRegExp)
 
 	namespaceMatch = regexp.MustCompile(NamespaceMatchRegexp)
 
@@ -227,4 +231,11 @@ func validateNamespace(namespace string) error {
 	}
 
 	return nil
+}
+
+func envKeySafeNamespace(namespace string) string {
+	return envKeySafeNamespaceMatch.ReplaceAllString(
+		strings.ToUpper(namespace),
+		"_",
+	)
 }
